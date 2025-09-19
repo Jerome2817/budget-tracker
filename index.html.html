@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Alkansya (Piggy) & Budget Tracker</title>
+  <style>
+    :root{
+      --accent:#2196f3;
+      --accent2:#64b5f6;
+      --bg:#162447;
+      --card:#1f2a48;
+      --muted:#b3bed7;
+      --border:#28345a;
+      --shadow:0 4px 18px rgba(33,150,243,0.10);
+    }
+    *{box-sizing:border-box}
+    body{
+      font-family:Georgia, 'Times New Roman', Times, serif;
+      margin:0;
+      background:var(--bg);
+      color:#eaf3fb;
+    }
+    .wrap{max-width:980px;margin:28px auto;padding:20px}
+    header{
+      display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:20px
+    }
+    h1{font-size:22px;margin:0;font-family:'Georgia',serif;letter-spacing:1px;}
+    .tabs{display:flex;gap:8px}
+    button.tab{
+      background:transparent;
+      border:1.5px solid var(--border);
+      padding:8px 16px;
+      border-radius:10px;
+      cursor:pointer;
+      font-family:inherit;
+      font-size:15px;
+      color:var(--accent);
+      transition:background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
+      box-shadow:0 2px 8px rgba(33,150,243,0.04);
+    }
+    button.tab.active{
+      background:linear-gradient(90deg,var(--accent),var(--accent2));
+      color:white;
+      box-shadow:0 6px 18px rgba(33,150,243,0.16);
+      border-color:var(--accent2);
+    }
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+    .card{
+      background:var(--card);
+      padding:18px;
+      border-radius:14px;
+      box-shadow:var(--shadow);
+      border:1.5px solid var(--border);
+      color:#eaf3fb;
+    }
+    .center{text-align:center}
+    .pig-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;padding:8px}
+    svg{width:180px;height:120px}
+    .balance{font-size:28px;font-weight:700;color:var(--accent);}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+    input[type=number],input[type=text],select{
+      padding:8px;
+      border-radius:8px;
+      border:1.5px solid var(--border);
+      min-width:120px;
+      background:#22305a;
+      font-size:15px;
+      color:#eaf3fb;
+      transition:border 0.2s;
+    }
+    input:focus,select:focus{
+      outline:none;
+      border-color:var(--accent2);
+    }
+    .btn{
+      padding:8px 16px;
+      border-radius:12px;
+      border:0;
+      cursor:pointer;
+      font-size:15px;
+      font-family:inherit;
+      font-weight:600;
+      background:linear-gradient(90deg,var(--accent),var(--accent2));
+      color:#fff;
+      box-shadow:0 2px 8px rgba(33,150,243,0.08);
+      transition:transform 0.12s cubic-bezier(.4,2,.6,1), box-shadow 0.18s, background 0.18s;
+      position:relative;
+      overflow:hidden;
+    }
+    .btn.ghost{
+      background:#22305a;
+      color:var(--accent);
+      border:1.5px solid var(--border);
+      box-shadow:none;
+      transition:background 0.18s, color 0.18s, border 0.18s, transform 0.12s cubic-bezier(.4,2,.6,1);
+    }
+    .btn:active, .btn:focus{
+      animation:btnPop 0.18s cubic-bezier(.4,2,.6,1);
+      outline:none;
+    }
+    @keyframes btnPop{
+      0%{transform:scale(1);}
+      60%{transform:scale(1.13);}
+      100%{transform:scale(1);}
+    }
+    .muted{color:var(--muted);font-size:13px}
+    .history{max-height:220px;overflow:auto;margin-top:8px}
+    .tx{display:flex;justify-content:space-between;padding:8px 6px;border-bottom:1px dashed #28345a}
+    .small{font-size:13px}
+    .budget-list{display:grid;gap:8px}
+    .category{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:10px;
+      border-radius:10px;
+      border:1.5px solid var(--border);
+      background:#22305a;
+    }
+    .progress{
+      height:10px;
+      background:#28345a;
+      border-radius:8px;
+      overflow:hidden;
+      margin-top:6px
+    }
+    .progress > i{
+      display:block;
+      height:100%;
+      background:linear-gradient(90deg,var(--accent),var(--accent2));
+    }
+    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr;}.card{padding:12px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Alkansya & Budget Tracker</h1>
+        <div class="muted" style="font-size:15px;font-weight:600;margin-bottom:2px;">For my Best Mahal</div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-tab="alkansya">Alkansya</button>
+        <button class="tab" data-tab="budget">Budget Tracker</button>
+      </div>
+    </header>
+
+    <!-- Contextual tutorial modal -->
+    <div id="contextTutorialModal" style="display:none;position:fixed;z-index:3000;left:0;top:0;width:100vw;height:100vh;background:rgba(22,36,71,0.75);align-items:center;justify-content:center;">
+      <div id="contextTutorialBox" style="background:#22305a;padding:28px 24px 18px 24px;border-radius:16px;box-shadow:0 8px 32px #0008;max-width:90vw;width:320px;text-align:left;animation:modalPop 0.22s cubic-bezier(.4,2,.6,1);">
+        <div id="contextTutorialContent" style="color:var(--muted);font-size:15px;"></div>
+        <div style="text-align:center;margin-top:16px;">
+          <button id="closeContextTutorialBtn" class="btn" style="min-width:90px;">OK</button>
+        </div>
+      </div>
+    </div>
+    <style>
+      @keyframes modalPop {
+        0% {transform:scale(0.7);}
+        70% {transform:scale(1.08);}
+        100% {transform:scale(1);}
+      }
+    </style>
+
+    <main class="grid">
+      <section class="card" id="mainPanel">
+        <!-- Alkansya content injected here -->
+      </section>
+
+      <aside class="card">
+        <div class="center">
+          <strong>Quick Summary</strong>
+          <div id="quickBalance" class="balance">₱0.00</div>
+          <div class="muted">Total saved</div>
+        </div>
+
+        <hr style="margin:12px 0;border:none;border-top:1px dashed #f1f3f7">
+
+        <div>
+          <strong>Monthly Budget Snapshot</strong>
+          <div id="snapshot" class="muted small">No budgets yet</div>
+        </div>
+
+        <hr style="margin:12px 0;border:none;border-top:1px dashed #f1f3f7">
+
+        <div>
+          <strong>Actions</strong>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+            <!-- Removed Export JSON button -->
+            <button class="btn ghost" id="clearBtn">Clear All</button>
+          </div>
+        </div>
+
+      </aside>
+    </main>
+
+    <footer>Made by your fav baby boy — Alkansya & Budget Tracker</footer>
+  </div>
+
+  <!-- Custom modal for clear all confirmation -->
+  <div id="clearModal" style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100vw;height:100vh;background:rgba(22,36,71,0.65);align-items:center;justify-content:center;">
+    <div id="clearModalBox" style="background:#22305a;padding:32px 28px 22px 28px;border-radius:18px;box-shadow:0 8px 32px #0008;max-width:90vw;width:340px;text-align:center;animation:modalPop 0.22s cubic-bezier(.4,2,.6,1);">
+      <div style="font-size:20px;font-weight:700;color:#ffe066;margin-bottom:10px;">⚠️ Clear All Data?</div>
+      <div style="color:#eaf3fb;font-size:15px;margin-bottom:18px;">This cannot be undone.<br>Are you sure?</div>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button id="clearModalYes" class="btn" style="background:linear-gradient(90deg,#f44336,#ff9800);color:#fff;">Yes, Clear All</button>
+        <button id="clearModalNo" class="btn ghost">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <style>
+    @keyframes modalPop {
+      0% {transform:scale(0.7);}
+      70% {transform:scale(1.08);}
+      100% {transform:scale(1);}
+    }
+  </style>
+  <script>
+  // ---------- Utilities ----------
+  const money = v => '₱' + Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  // ---------- Data / Persistence ----------
+  const STORE_KEYS = {ALK:'alkansya_v1',BUD:'budget_v1'};
+  function loadAlk(){
+    const raw = localStorage.getItem(STORE_KEYS.ALK);
+    if(!raw) return {balance:0,goal:0,history:[]};
+    try{return JSON.parse(raw);}catch(e){return {balance:0,goal:0,history:[]}}
+  }
+  function saveAlk(s){localStorage.setItem(STORE_KEYS.ALK,JSON.stringify(s));renderAll();}
+
+  function loadBudget(){
+    const raw = localStorage.getItem(STORE_KEYS.BUD);
+    if(!raw) return {categories:[],expenses:[]};
+    try{return JSON.parse(raw);}catch(e){return {categories:[],expenses:[]}}
+  }
+  function saveBudget(b){localStorage.setItem(STORE_KEYS.BUD,JSON.stringify(b));renderAll();}
+
+  // ---------- Initial State ----------
+  let alk = loadAlk();
+  let bud = loadBudget();
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('button.tab').forEach(btn=>btn.addEventListener('click',()=>{
+    document.querySelectorAll('button.tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    renderMain(btn.dataset.tab);
+  }));
+
+  // ---------- Render Main Panels ----------
+  const mainPanel = document.getElementById('mainPanel');
+  function renderMain(which='alkansya'){
+    if(which==='alkansya') renderAlkansya(); else renderBudget();
+  }
+
+  // ---------- Alkansya ----------
+  function renderAlkansya(){
+    mainPanel.innerHTML = `
+      <div class="center pig-wrap">
+        <div style="position:relative;width:180px;height:120px;">
+          <svg viewBox="0 0 240 160" aria-hidden="true" style="position:absolute;left:0;top:0;z-index:1;">
+            <!-- Panda holding a jar -->
+            <g>
+              <!-- Panda body -->
+              <ellipse cx="120" cy="110" rx="55" ry="35" fill="#fff" stroke="#222" stroke-width="2"/>
+              <!-- Panda head -->
+              <ellipse cx="120" cy="65" rx="38" ry="32" fill="#fff" stroke="#222" stroke-width="2"/>
+              <!-- Panda ears -->
+              <ellipse cx="88" cy="45" rx="12" ry="14" fill="#222"/>
+              <ellipse cx="152" cy="45" rx="12" ry="14" fill="#222"/>
+              <!-- Panda eyes -->
+              <ellipse cx="105" cy="70" rx="8" ry="10" fill="#222"/>
+              <ellipse cx="135" cy="70" rx="8" ry="10" fill="#222"/>
+              <ellipse cx="105" cy="74" rx="3" ry="4" fill="#fff"/>
+              <ellipse cx="135" cy="74" rx="3" ry="4" fill="#fff"/>
+              <!-- Panda nose -->
+              <ellipse cx="120" cy="85" rx="5" ry="3" fill="#222"/>
+              <!-- Panda mouth -->
+              <path d="M115 90 Q120 95 125 90" stroke="#222" stroke-width="2" fill="none"/>
+              <!-- Panda arms holding jar -->
+              <ellipse cx="90" cy="120" rx="13" ry="7" fill="#222" transform="rotate(-15 90 120)"/>
+              <ellipse cx="150" cy="120" rx="13" ry="7" fill="#222" transform="rotate(15 150 120)"/>
+              <!-- Jar -->
+              <g>
+                <ellipse cx="120" cy="125" rx="18" ry="12" fill="#e0e0e0" stroke="#aaa" stroke-width="1.5"/>
+                <rect x="102" y="120" width="36" height="18" rx="9" fill="#f7f7f7" stroke="#aaa" stroke-width="1.5"/>
+                <!-- Jar fill level -->
+                <rect id="fillLevel" x="104" y="132" width="32" height="4" fill="#6c5ce7" opacity="0.18"/>
+                <ellipse cx="120" cy="138" rx="16" ry="7" fill="#e0e0e0" stroke="#aaa" stroke-width="1"/>
+                <!-- Jar lid -->
+                <ellipse cx="120" cy="120" rx="18" ry="6" fill="#bdbdbd" stroke="#888" stroke-width="1"/>
+              </g>
+            </g>
+          </svg>
+          <!-- Animated coins container -->
+          <div id="coinDropArea" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:2;"></div>
+        </div>
+
+        <div>
+          <div class="muted">Balance</div>
+          <div id="alkBalance" class="balance">${money(alk.balance)}</div>
+          <div class="muted small">Goal: <span id="alkGoal">${alk.goal?money(alk.goal):'—'}</span></div>
+        </div>
+
+        <div class="controls" style="margin-top:6px">
+          <input id="amountIn" type="number" min="1" step="0.01" placeholder="Amount" />
+          <select id="denom">
+            <option value="">--or coin--</option>
+            <option value="1">₱1</option>
+            <option value="5">₱5</option>
+            <option value="10">₱10</option>
+            <option value="20">₱20</option>
+            <option value="50">₱50</option>
+            <option value="100">₱100</option>
+          </select>
+          <button class="btn primary" id="addBtn">Add</button>
+          <button class="btn ghost" id="withdrawBtn">Withdraw</button>
+        </div>
+
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+          <input id="goalInput" type="number" min="0" placeholder="Set goal (optional)" />
+          <button class="btn ghost" id="setGoalBtn">Set Goal</button>
+        </div>
+
+        <div style="width:100%;max-width:640px;margin-top:12px;text-align:left">
+          <strong>History</strong>
+          <div class="history" id="alkHistory"></div>
+        </div>
+      </div>
+    `;
+
+    // Attach events
+    document.getElementById('addBtn').addEventListener('click',()=>{
+      const amountEl = document.getElementById('amountIn');
+      const denom = document.getElementById('denom').value;
+      let v = parseFloat(amountEl.value||0);
+      if(denom) v = parseFloat(denom);
+      if(!v || v<=0){alert('Enter amount to add');return}
+      alk.balance = Math.round((alk.balance + v)*100)/100;
+      alk.history.unshift({type:'deposit',amount:v,when:new Date().toISOString()});
+      saveAlk(alk);
+      amountEl.value='';document.getElementById('denom').value='';
+      // Animate coins
+      animateCoinDrop(Math.max(1, Math.min(Math.round(v/20), 5)));
+    });
+
+    document.getElementById('withdrawBtn').addEventListener('click',()=>{
+      const v = parseFloat(prompt('How much to withdraw?','0'))||0;
+      if(v<=0){return}
+      if(v>alk.balance){if(!confirm('Withdraw more than current balance? This will allow negative balance. Continue?')) return}
+      alk.balance = Math.round((alk.balance - v)*100)/100;
+      alk.history.unshift({type:'withdraw',amount:v,when:new Date().toISOString()});
+      saveAlk(alk);
+    });
+
+    document.getElementById('setGoalBtn').addEventListener('click',()=>{
+      const g = parseFloat(document.getElementById('goalInput').value||0);
+      alk.goal = g>0?Math.round(g*100)/100:0; saveAlk(alk);
+    });
+
+    renderAlkHistory(); updatePigFill(); updateQuick();
+    // Attach contextual tutorials
+    attachAlkansyaTutorials();
+  }
+
+  // --- Coin drop animation ---
+  function animateCoinDrop(count){
+    const area = document.getElementById('coinDropArea');
+    if(!area) return;
+    for(let i=0;i<count;i++){
+      const coin = document.createElement('div');
+      // Randomize horizontal position above jar opening (jar opening at cx=120, width ~36)
+      const left = 70 + Math.random()*40;
+      // Coin SVG (gold/yellow)
+      coin.innerHTML = `
+        <svg width="22" height="22" style="display:block;" viewBox="0 0 22 22">
+          <circle cx="11" cy="11" r="10" fill="#ffe066" stroke="#e6b800" stroke-width="2"/>
+          <text x="11" y="16" text-anchor="middle" font-size="12" font-family="Georgia" fill="#e6b800" font-weight="bold">₱</text>
+        </svg>
+      `;
+      coin.style.position = 'absolute';
+      coin.style.left = left+'px';
+      coin.style.top = '20px';
+      coin.style.opacity = '1';
+      coin.style.transition = 'transform 0.7s cubic-bezier(.5,1.7,.5,1), opacity 0.3s';
+      coin.style.transform = 'translateY(0)';
+      area.appendChild(coin);
+      // Animate drop
+      setTimeout(()=>{
+        coin.style.transform = 'translateY(75px) scale(0.85)';
+        coin.style.opacity = '0.7';
+      }, 10 + i*80);
+      // Remove after animation
+      setTimeout(()=>{ if(coin.parentNode) coin.parentNode.removeChild(coin); }, 900 + i*80);
+    }
+  }
+
+  function renderAlkHistory(){
+    const cont = document.getElementById('alkHistory'); if(!cont) return;
+    cont.innerHTML = alk.history.length? alk.history.map(h=>{
+      const t = new Date(h.when); return `<div class="tx"><div>
+        <div style="font-weight:600">${h.type==='deposit'?'Deposit':'Withdraw'}</div>
+        <div class="small muted">${t.toLocaleString()}</div>
+      </div><div style="text-align:right">${money(h.amount)}</div></div>`
+    }).join('') : '<div class="muted small" style="padding:8px">No transactions yet</div>';
+  }
+
+  function updatePigFill(){
+    const fill = document.getElementById('fillLevel'); if(!fill) return;
+    const max = Math.max(alk.goal||100, alk.balance||0, 100);
+    const pct = Math.min(1, (alk.balance||0)/max);
+    // adjust rectangle height to show fill
+    const totalH = 80;
+    const h = Math.round(totalH * pct);
+    const y = 40 + (totalH - h);
+    fill.setAttribute('y', y);
+    fill.setAttribute('height', h);
+    fill.setAttribute('opacity', 0.18 + pct*0.5);
+    const goalEl = document.getElementById('alkGoal'); if(goalEl) goalEl.textContent = alk.goal? money(alk.goal): '—';
+    const balEl = document.getElementById('alkBalance'); if(balEl) balEl.textContent = money(alk.balance);
+  }
+
+  function updateQuick(){
+    const qb = document.getElementById('quickBalance'); if(qb) qb.textContent = money(alk.balance);
+    const snap = document.getElementById('snapshot'); if(!snap) return;
+    if(!bud.categories.length) snap.textContent = 'No budgets yet';
+    else{
+      const totals = bud.categories.map(c=>({name:c.name,spent:spentInCategory(c.id),limit:c.limit}));
+      const lines = totals.map(t=>`${t.name}: ${money(t.spent)} / ${money(t.limit||0)}`);
+      snap.textContent = lines.join(' • ');
+    }
+  }
+
+  // ---------- Budget Tracker ----------
+  function renderBudget(){
+    mainPanel.innerHTML = `
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <strong>Budget Tracker</strong>
+            <div class="muted small">Create categories, set budgets, add expenses</div>
+          </div>
+          <div>
+            <input id="catName" type="text" placeholder="New category" />
+            <input id="catLimit" type="number" placeholder="Limit" />
+            <button class="btn primary" id="addCatBtn">Add</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px" id="categoriesArea"></div>
+
+        <hr style="margin:12px 0;border:none;border-top:1px dashed #f1f3f7">
+
+        <div>
+          <strong>Add Expense</strong>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <select id="expCat"></select>
+            <input id="expAmount" type="number" placeholder="Amount" />
+            <input id="expDesc" type="text" placeholder="Note (optional)" />
+            <button class="btn primary" id="addExpBtn">Add Expense</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <strong>Expenses</strong>
+          <div id="expenseList" class="history"></div>
+        </div>
+
+        <div style="margin-top:12px">
+          <canvas id="budgetChart" width="300" height="200" aria-label="Budget chart"></canvas>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('addCatBtn').addEventListener('click',()=>{
+      const name = document.getElementById('catName').value.trim();
+      const limit = parseFloat(document.getElementById('catLimit').value||0);
+      if(!name){alert('Enter category name');return}
+      const id = 'c_'+Date.now();
+      bud.categories.push({id,name,limit: Math.round(limit*100)/100}); saveBudget(bud);
+      document.getElementById('catName').value='';document.getElementById('catLimit').value='';
+    });
+
+    document.getElementById('addExpBtn').addEventListener('click',()=>{
+      const cat = document.getElementById('expCat').value; const amt = parseFloat(document.getElementById('expAmount').value||0); const desc=document.getElementById('expDesc').value.trim();
+      if(!cat){alert('Choose a category');return}
+      if(!amt || amt<=0){alert('Enter valid amount');return}
+      bud.expenses.unshift({id:'e_'+Date.now(),cat,amount:Math.round(amt*100)/100,desc,when:new Date().toISOString()});
+      saveBudget(bud);
+      document.getElementById('expAmount').value='';document.getElementById('expDesc').value='';
+    });
+
+    renderBudgetCategories(); renderExpenses(); drawChart(); updateQuick();
+  }
+
+  function renderBudgetCategories(){
+    const area = document.getElementById('categoriesArea'); const sel = document.getElementById('expCat'); if(!area) return;
+    area.innerHTML = bud.categories.length? bud.categories.map(c=>{
+      const spent = spentInCategory(c.id);
+      const pct = c.limit>0? Math.min(1, spent/c.limit) : 0;
+      return `<div class="category">
+        <div style="min-width:0">
+          <div style="font-weight:600">${c.name}</div>
+          <div class="small muted">${money(spent)} / ${money(c.limit||0)}</div>
+          <div class="progress"><i style="width:${Math.round(pct*100)}%"></i></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn ghost" data-act="edit" data-id="${c.id}">Edit</button>
+          <button class="btn ghost" data-act="del" data-id="${c.id}">Delete</button>
+        </div>
+      </div>`
+    }).join('') : '<div class="muted small">No categories yet</div>';
+
+    // populate select
+    if(sel){ sel.innerHTML = '<option value="">-- choose --</option>' + bud.categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join(''); }
+
+    // attach events
+    area.querySelectorAll('button[data-act]').forEach(b=>b.addEventListener('click',()=>{
+      const id = b.dataset.id; const act = b.dataset.act;
+      if(act==='del'){ if(confirm('Delete category and its expenses?')){ bud.categories = bud.categories.filter(x=>x.id!==id); bud.expenses = bud.expenses.filter(e=>e.cat!==id); saveBudget(bud);} }
+      if(act==='edit'){
+        const c = bud.categories.find(x=>x.id===id); if(!c) return;
+        const newName = prompt('Edit category name',c.name); if(!newName) return; const newLimit = parseFloat(prompt('New limit',c.limit)||c.limit);
+        c.name = newName; c.limit = Math.round((newLimit||0)*100)/100; saveBudget(bud);
+      }
+    }));
+  }
+
+  function renderExpenses(){
+    const el = document.getElementById('expenseList'); if(!el) return;
+    el.innerHTML = bud.expenses.length? bud.expenses.map(e=>{
+      const cat = bud.categories.find(c=>c.id===e.cat);
+      const when = new Date(e.when);
+      return `<div class="tx"><div>
+        <div style="font-weight:600">${cat?cat.name:'(unknown)'} — ${e.desc||''}</div>
+        <div class="small muted">${when.toLocaleString()}</div>
+      </div><div style="text-align:right"><div style="font-weight:700">${money(e.amount)}</div><div class="small"><button class="btn ghost" data-eid="${e.id}">Delete</button></div></div></div>`
+    }).join('') : '<div class="muted small" style="padding:8px">No expenses yet</div>';
+
+    el.querySelectorAll('button[data-eid]').forEach(b=>b.addEventListener('click',()=>{
+      const id = b.dataset.eid; if(confirm('Delete this expense?')){ bud.expenses = bud.expenses.filter(x=>x.id!==id); saveBudget(bud); }
+    }));
+  }
+
+  function spentInCategory(catId){ return bud.expenses.filter(e=>e.cat===catId).reduce((s,e)=>s+e.amount,0); }
+
+  function drawChart(){
+    const canvas = document.getElementById('budgetChart'); if(!canvas) return; const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
+    const cats = bud.categories; if(!cats.length){ ctx.fillStyle='#999'; ctx.font='14px sans-serif'; ctx.fillText('No budget data',20,60); return }
+    const data = cats.map(c=>spentInCategory(c.id)); const total = data.reduce((a,b)=>a+b,0)||1;
+    // simple donut
+    let start = -Math.PI/2; const cx=150,cy=100,r=60,inner=30;
+    cats.forEach((c,i)=>{
+      const slice = data[i]/total * Math.PI*2;
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,start+slice); ctx.closePath();
+      // color pick from gradient
+      const t = i / Math.max(1,cats.length-1);
+      const col = `hsl(${Math.round(260 - t*200)} 80% 60%)`;
+      ctx.fillStyle = col; ctx.fill();
+      start += slice;
+    });
+    // inner circle
+    ctx.beginPath(); ctx.fillStyle = '#fff'; ctx.arc(cx,cy,inner,0,Math.PI*2); ctx.fill();
+    // legend
+    ctx.font='12px sans-serif'; let lx=10,ly=10;
+    cats.forEach((c,i)=>{
+      ctx.fillStyle = `hsl(${Math.round(260 - (i/(cats.length-1||1))*200)} 80% 60%)`;
+      ctx.fillRect(lx,ly-8,10,10);
+      ctx.fillStyle = '#111'; ctx.fillText(`${c.name}: ${money(spentInCategory(c.id))}`, lx+16, ly);
+      ly += 18; if(ly>180){ly=10; lx=170}
+    });
+  }
+
+  // ---------- Global actions ----------
+  // Removed exportBtn event listener
+  // document.getElementById('exportBtn').addEventListener('click',()=>{ ... });
+
+  // Replace default confirm with custom modal for "Clear All"
+  document.getElementById('clearBtn').addEventListener('click',()=>{
+    showClearModal();
+  });
+
+  function showClearModal() {
+    const modal = document.getElementById('clearModal');
+    modal.style.display = 'flex';
+    // Focus the "Cancel" button for accessibility
+    setTimeout(()=>{document.getElementById('clearModalNo').focus();}, 100);
+  }
+  function hideClearModal() {
+    document.getElementById('clearModal').style.display = 'none';
+  }
+  document.getElementById('clearModalNo').onclick = hideClearModal;
+  document.getElementById('clearModal').onclick = function(e){
+    if(e.target === this) hideClearModal();
+  };
+  document.getElementById('clearModalYes').onclick = function(){
+    localStorage.removeItem(STORE_KEYS.ALK);
+    localStorage.removeItem(STORE_KEYS.BUD);
+    alk = loadAlk();
+    bud = loadBudget();
+    hideClearModal();
+    renderAll();
+  };
+
+  // Contextual tutorial logic
+  const contextTutorials = {
+    amountIn: {
+      key: 'alkansya_tut_amount',
+      text: `<b>Amount Field</b><br>
+        <span>
+          Enter the amount you want to save in your panda jar. <br>
+          <b>Tip:</b> You can type any value, including decimals (e.g., 123.45).<br>
+          <b>Pro Tip:</b> If you want to use a coin denomination, you can select it from the dropdown instead!
+        </span>`
+    },
+    denom: {
+      key: 'alkansya_tut_denom',
+      text: `<b>Coin Dropdown</b><br>
+        <span>
+          Select a coin value for quick entry (₱1, ₱5, ₱10, etc).<br>
+          <b>Tip:</b> Choosing a coin will automatically fill the amount field for you.<br>
+          <b>Pro Tip:</b> You can still type a custom amount if you want to save a different value.
+        </span>`
+    },
+    addBtn: {
+      key: 'alkansya_tut_add',
+      text: `<b>Add Button</b><br>
+        <span>
+          Click to deposit the entered amount into your panda jar.<br>
+          <b>Tip:</b> Each deposit is recorded in your transaction history below.<br>
+          <b>Fun Fact:</b> Watch for the animated coins dropping into the jar!
+        </span>`
+    },
+    withdrawBtn: {
+      key: 'alkansya_tut_withdraw',
+      text: `<b>Withdraw Button</b><br>
+        <span>
+          Click to withdraw money from your savings.<br>
+          <b>Tip:</b> You can withdraw any amount, even more than your current balance (your balance will go negative).<br>
+          <b>Pro Tip:</b> All withdrawals are tracked in your history for transparency.
+        </span>`
+    },
+    goalInput: {
+      key: 'alkansya_tut_goal',
+      text: `<b>Goal Field</b><br>
+        <span>
+          Set a savings goal to motivate yourself!<br>
+          <b>Tip:</b> The jar will visually fill up as you get closer to your goal.<br>
+          <b>Pro Tip:</b> You can change your goal anytime, or leave it blank if you just want to save freely.
+        </span>`
+    },
+    setGoalBtn: {
+      key: 'alkansya_tut_setgoal',
+      text: `<b>Set Goal Button</b><br>
+        <span>
+          Click to save your goal amount.<br>
+          <b>Tip:</b> Setting a goal helps you track your progress and stay motivated.<br>
+          <b>Pro Tip:</b> Try setting small, achievable goals and increase them as you build your savings habit!
+        </span>`
+    }
+  };
+
+  function showContextTutorial(key) {
+    if (localStorage.getItem(contextTutorials[key].key)) return;
+    document.getElementById('contextTutorialContent').innerHTML = contextTutorials[key].text;
+    document.getElementById('contextTutorialModal').style.display = 'flex';
+    document.getElementById('closeContextTutorialBtn').onclick = function() {
+      document.getElementById('contextTutorialModal').style.display = 'none';
+    };
+    document.getElementById('contextTutorialModal').onclick = function(e){
+      if(e.target === this) {
+        document.getElementById('contextTutorialModal').style.display = 'none';
+      }
+    };
+  }
+
+  // Attach contextual tutorial triggers after Alkansya panel renders
+  function attachAlkansyaTutorials() {
+    const amountIn = document.getElementById('amountIn');
+    if (amountIn) amountIn.addEventListener('focus', ()=>showContextTutorial('amountIn'), {once:true});
+    const denom = document.getElementById('denom');
+    if (denom) denom.addEventListener('focus', ()=>showContextTutorial('denom'), {once:true});
+    const addBtn = document.getElementById('addBtn');
+    if (addBtn) addBtn.addEventListener('mouseenter', ()=>showContextTutorial('addBtn'), {once:true});
+    const withdrawBtn = document.getElementById('withdrawBtn');
+    if (withdrawBtn) withdrawBtn.addEventListener('mouseenter', ()=>showContextTutorial('withdrawBtn'), {once:true});
+    const goalInput = document.getElementById('goalInput');
+    if (goalInput) goalInput.addEventListener('focus', ()=>showContextTutorial('goalInput'), {once:true});
+    const setGoalBtn = document.getElementById('setGoalBtn');
+    if (setGoalBtn) setGoalBtn.addEventListener('mouseenter', ()=>showContextTutorial('setGoalBtn'), {once:true});
+  }
+
+  // ---------- Rendering helpers ----------
+  function renderAll(){ renderMain(document.querySelector('button.tab.active').dataset.tab); renderAlkHistory(); renderBudgetCategories(); renderExpenses(); drawChart(); updatePigFill(); updateQuick(); }
+
+  // initial render
+  renderAll();
+
+  // auto-save on unload (already stored per action but keep safe)
+  window.addEventListener('beforeunload',()=>{ saveAlk(alk); saveBudget(bud); });
+  </script>
+</body>
+</html>
+</body>
+</html>
+</body>
+</html>
+       
+  </script>
+</body>
+</html>
